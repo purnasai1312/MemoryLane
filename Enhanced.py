@@ -1,12 +1,11 @@
-from kivymd.app import MDApp
 import os
 import time
 import datetime
-import csv
 import json
 import requests
 import threading
 import queue
+import CoreLocation
 
 # Define the constants
 
@@ -15,9 +14,6 @@ APP_NAME = "Memory Lane"
 
 # The name of the database file
 DATABASE_FILE = "memory_lane.db"
-
-# The name of the CSV file that stores the GPS data
-CSV_FILE = "gps_data.csv"
 
 # The name of the JSON file that stores the machine learning model
 MODEL_FILE = "model.json"
@@ -50,17 +46,14 @@ MODEL_UPDATER_THREAD = None
 
 # The function that reads the GPS data from the device
 def read_gps_data():
-    # Open the GPS file
-    with open(CSV_FILE, "r") as csvfile:
-        # Create a reader for the CSV file
-        reader = csv.reader(csvfile, delimiter=",")
-        # Iterate over the rows in the CSV file
-        for row in reader:
-            # Get the latitude and longitude of the GPS point
-            latitude = float(row[0])
-            longitude = float(row[1])
-            # Add the GPS point to the queue
-            GPS_DATA_QUEUE.put((latitude, longitude))
+    # Create a location manager object
+    location_manager = CoreLocation.CLLocationManager()
+    # Set the delegate to self
+    location_manager.delegate = self
+    # Request permission to access location
+    location_manager.requestWhenInUseAuthorization()
+    # Start updating location
+    location_manager.startUpdatingLocation()
 
 # The function that updates the machine learning model
 def update_model():
@@ -94,21 +87,23 @@ def start_model_updater_thread():
     MODEL_UPDATER_THREAD = threading.Thread(target=update_model)
     MODEL_UPDATER_THREAD.start()
 
-class Main_App(MDApp):
-    # The main function
-    def main():
-        # Start the GPS reader thread
-        start_gps_reader_thread()
-        # Start the model updater thread
-        start_model_updater_thread()
-        # Enter the main loop
-        while True:
-            # Sleep for the GPS update interval
-            time.sleep(GPS_UPDATE_INTERVAL)
-            # Get the next GPS point from the queue
-            latitude, longitude = GPS_DATA_QUEUE.get()
-            # Print the GPS point
-            print("Latitude:", latitude, "Longitude:", longitude)
-                        
-if __name__ == "__main__":
-    Main_App().run()
+# The main function
+def main():
+    # Start the GPS reader thread
+    start_gps_reader_thread()
+    # Start the model updater thread
+    start_model_updater_thread()
+    # Enter the main loop
+    while True:
+        # Sleep for the GPS update interval
+        time.sleep(GPS_UPDATE_INTERVAL)
+
+class LocationDelegate(CoreLocation.NSObject):
+    def locationManager_didUpdateLocations_(self, manager, locations):
+        # Get the latitude and longitude of the GPS point
+        latitude = locations[-1].coordinate.latitude
+        longitude = locations[-1].coordinate.longitude
+        # Add the GPS point to the queue
+        GPS_DATA_QUEUE.put((latitude, longitude))
+        # Print the GPS point
+        print("Latitude:", latitude, "Longitude:", longitude)
