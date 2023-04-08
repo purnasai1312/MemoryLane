@@ -283,21 +283,20 @@ def adjustUpdateInterval():
 # Schedule the function to be called periodically to adjust the update interval
 timer = Foundation.NSTimer.scheduledTimerWithTimeInterval_target_selector_userInfo_repeats_(60, self, "adjustUpdateInterval", None, True)
 
-class Main_App(MDApp):
-    # The main function
-    def main():
-        # Start the GPS reader thread
-        start_gps_reader_thread()
-        # Start the model updater thread
-        start_model_updater_thread()
-        # Enter the main loop
-        while True:
-            # Sleep for the GPS update interval
-            time.sleep(GPS_UPDATE_INTERVAL)
-            # Get the next GPS point from the queue
-            latitude, longitude = GPS_DATA_QUEUE.get()
-            # Print the GPS point
-            print("Latitude:", latitude, "Longitude:", longitude)
+# The main function
+def main():
+    # Start the GPS reader thread
+    start_gps_reader_thread()
+    # Start the model updater thread
+    start_model_updater_thread()
+    # Enter the main loop
+    while True:
+        # Sleep for the GPS update interval
+        time.sleep(GPS_UPDATE_INTERVAL)
+        # Get the next GPS point from the queue
+        latitude, longitude = GPS_DATA_QUEUE.get()
+        # Print the GPS point
+        print("Latitude:", latitude, "Longitude:", longitude)
                         
 if __name__ == "__main__":
     Main_App().run()
